@@ -418,3 +418,63 @@ footer {
         min-width: 800px;
     }
 }
+
+.sort-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    width: 100%;
+    padding: 0;
+
+    background: transparent;
+
+    border: 0;
+
+    color: inherit;
+
+    font: inherit;
+    text-align: left;
+    text-transform: inherit;
+    letter-spacing: inherit;
+
+    cursor: pointer;
+}
+
+.sort-button:hover {
+    color: var(--text);
+}
+
+.sort-button:focus-visible {
+    border-radius: 4px;
+
+    outline: 2px solid var(--blue);
+    outline-offset: 4px;
+}
+
+.sort-indicator {
+    color: var(--muted);
+
+    font-size: 10px;
+    line-height: 1;
+}
+
+th[aria-sort] .sort-indicator {
+    color: var(--blue);
+}
+
+.sr-only {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+
+    overflow: hidden;
+
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+
+    border: 0;
+}

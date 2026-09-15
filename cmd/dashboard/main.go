@@ -59,9 +59,18 @@ func main() {
 	mux.HandleFunc("/api/metadata", handler.Metadata)
 	mux.HandleFunc("/health", health)
 
+	staticHandler := http.FileServer(
+		http.FS(staticFiles),
+	)
+
 	mux.Handle(
 		"/style.css",
-		http.FileServer(http.FS(staticFiles)),
+		staticHandler,
+	)
+
+	mux.Handle(
+		"/dashboard.js",
+		staticHandler,
 	)
 
 	server := &http.Server{

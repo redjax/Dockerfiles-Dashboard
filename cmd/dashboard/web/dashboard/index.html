@@ -76,11 +76,40 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Container</th>
-                        <th>Current Version</th>
-                        <th>Last Updated</th>
-                        <th>Digest</th>
-                        <th></th>
+                        <th scope="col" data-sort-column="image" aria-sort="ascending">
+                            <button class="sort-button" type="button" data-sort="image">
+                                <span>Container</span>
+                                <span class="sort-indicator" aria-hidden="true">
+                                    ▲
+                                </span>
+                            </button>
+                        </th>
+
+                        <th scope="col" data-sort-column="latest">
+                            <button class="sort-button" type="button" data-sort="latest">
+                                <span>Current Version</span>
+                                <span class="sort-indicator" aria-hidden="true">
+                                    ◆
+                                </span>
+                            </button>
+                        </th>
+
+                        <th scope="col" data-sort-column="latest_updated">
+                            <button class="sort-button" type="button" data-sort="latest_updated">
+                                <span>Last Updated</span>
+                                <span class="sort-indicator" aria-hidden="true">
+                                    ◆
+                                </span>
+                            </button>
+                        </th>
+
+                        <th scope="col">Digest</th>
+
+                        <th scope="col">
+                            <span class="sr-only">
+                                Actions
+                            </span>
+                        </th>
                     </tr>
                 </thead>
 
@@ -147,185 +176,7 @@
         </footer>
     </main>
 
-    <script>
-        const search = document.getElementById("search");
-        const containers = document.getElementById("containers");
-        const empty = document.getElementById("empty");
-        const refreshButton = document.getElementById("refresh");
-        const refreshTime = document.getElementById("refresh-time");
-
-        function render(metadata) {
-            document.getElementById("repository").textContent =
-                metadata.repository || "unknown";
-
-            document.getElementById("repository").href =
-                metadata.url || "#";
-
-            document.getElementById("container-count").textContent =
-                metadata.packages.length;
-
-            document.getElementById("last-updated").textContent =
-                metadata.last_updated || "unknown";
-
-            document.getElementById("updated-count").textContent =
-                metadata.packages.filter(
-                    container => container.latest_updated
-                ).length;
-
-            containers.innerHTML = "";
-
-            for (const container of metadata.packages) {
-                const row = document.createElement("tr");
-
-                row.innerHTML = `
-                    <td>
-                        <div class="container-name">
-                            ${escapeHtml(container.image)}
-                        </div>
-                    </td>
-
-                    <td>
-                        <span class="version">
-                            ${escapeHtml(
-                    container.latest || "unknown"
-                )}
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="updated">
-                            ${escapeHtml(
-                    container.latest_updated || "—"
-                )}
-                        </span>
-                    </td>
-
-                    <td>
-                        ${container.latest_digest
-                        ? `<code>${escapeHtml(
-                            container.latest_digest
-                        )}</code>`
-                        : `<span class="unknown">—</span>`
-                    }
-                    </td>
-
-                    <td class="actions">
-                        <a
-                            href="${escapeAttribute(
-                        container.url
-                    )}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Open on GitHub"
-                        >
-                            ↗
-                        </a>
-                    </td>
-                `;
-
-                containers.appendChild(row);
-            }
-
-            updateSearch();
-            updateRefreshTime();
-        }
-
-        function updateSearch() {
-            const query = search.value
-                .trim()
-                .toLowerCase();
-
-            const rows = containers.querySelectorAll("tr");
-
-            let visible = 0;
-
-            for (const row of rows) {
-                const name = row
-                    .querySelector(".container-name")
-                    .textContent
-                    .toLowerCase();
-
-                const matches = name.includes(query);
-
-                row.hidden = !matches;
-
-                if (matches) {
-                    visible++;
-                }
-            }
-
-            empty.hidden = visible !== 0;
-        }
-
-        function updateRefreshTime() {
-            refreshTime.textContent =
-                "Dashboard checked " +
-                new Date().toLocaleTimeString();
-        }
-
-        async function refresh() {
-            refreshButton.disabled = true;
-            refreshButton.textContent = "↻ Refreshing...";
-
-            try {
-                const response = await fetch(
-                    "/api/metadata",
-                    {
-                        cache: "no-store"
-                    }
-                );
-
-                if (!response.ok) {
-                    throw new Error(
-                        `HTTP ${response.status}`
-                    );
-                }
-
-                const responseData = await response.json();
-
-                render(responseData.metadata);
-            } catch (error) {
-                console.error(
-                    "Failed to refresh metadata:",
-                    error
-                );
-            } finally {
-                refreshButton.disabled = false;
-                refreshButton.textContent = "↻ Refresh";
-            }
-        }
-
-        function escapeHtml(value) {
-            const div = document.createElement("div");
-
-            div.textContent = String(value ?? "");
-
-            return div.innerHTML;
-        }
-
-        function escapeAttribute(value) {
-            return escapeHtml(value)
-                .replace(/"/g, "&quot;");
-        }
-
-        search.addEventListener(
-            "input",
-            updateSearch
-        );
-
-        refreshButton.addEventListener(
-            "click",
-            refresh
-        );
-
-        setInterval(
-            refresh,
-            60 * 1000
-        );
-
-        updateSearch();
-        updateRefreshTime();
-    </script>
+    <script src="/dashboard.js" defer></script>
 </body>
 
 </html>
