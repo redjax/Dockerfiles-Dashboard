@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Container Monitor</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+    <main class="container">
+        <header class="header">
+            <div>
+                <h1>🐳 Container Monitor</h1>
+
+                <a id="repository" class="repository" href="{{.Metadata.URL}}" target="_blank"
+                    rel="noopener noreferrer">
+                    {{.Metadata.Repository}}
+                </a>
+            </div>
+
+            <div class="refresh-status">
+                <span class="status-dot"></span>
+                <span>LIVE</span>
+            </div>
+        </header>
+
+        <section class="stats">
+            <div class="stat-card">
+                <div class="stat-label">
+                    Containers
+                </div>
+
+                <div id="container-count" class="stat-value">
+                    {{.ContainerCount}}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">
+                    Last Refresh
+                </div>
+
+                <div id="last-updated" class="stat-value stat-time">
+                    {{.Metadata.LastUpdated}}
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">
+                    With Latest Tag
+                </div>
+
+                <div id="updated-count" class="stat-value">
+                    {{.UpdatedCount}}
+                </div>
+            </div>
+        </section>
+
+        <section class="toolbar">
+            <div class="search">
+                <span class="search-icon">⌕</span>
+
+                <input id="search" type="search" placeholder="Search containers..." autocomplete="off">
+            </div>
+
+            <button id="refresh" class="refresh-button" type="button">
+                ↻ Refresh
+            </button>
+        </section>
+
+        <section class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Container</th>
+                        <th>Current Version</th>
+                        <th>Last Updated</th>
+                        <th>Digest</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody id="containers">
+                    {{range .Metadata.Packages}}
+                    <tr>
+                        <td>
+                            <div class="container-name">
+                                {{.Image}}
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="version">
+                                {{if .Latest}}
+                                {{.Latest}}
+                                {{else}}
+                                <span class="unknown">
+                                    unknown
+                                </span>
+                                {{end}}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="updated">
+                                {{if .LatestUpdated}}
+                                {{.LatestUpdated}}
+                                {{else}}
+                                —
+                                {{end}}
+                            </span>
+                        </td>
+
+                        <td>
+                            {{if .LatestDigest}}
+                            <code>{{.LatestDigest}}</code>
+                            {{else}}
+                            <span class="unknown">—</span>
+                            {{end}}
+                        </td>
+
+                        <td class="actions">
+                            <a href="{{.URL}}" target="_blank" rel="noopener noreferrer" title="Open on GitHub">
+                                ↗
+                            </a>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+
+            <div id="empty" class="empty" hidden>
+                No containers match your search.
+            </div>
+        </section>
+
+        <footer>
+            <span>
+                Automatically refreshes every 60 seconds
+            </span>
+
+            <span id="refresh-time"></span>
+        </footer>
+    </main>
+
+    <script>
+        const search = document.getElementById("search");
+        const containers = document.getElementById("containers");
+        const empty = document.getElementById("empty");
+        const refreshButton = document.getElementById("refresh");
+        const refreshTime = document.getElementById("refresh-time");
+
+        function render(metadata) {
+            document.getElementById("repository").textContent =
+                metadata.repository || "unknown";
+
+            document.getElementById("repository").href =
+                metadata.url || "#";
+
+            document.getElementById("container-count").textContent =
+                metadata.packages.length;
+
+            document.getElementById("last-updated").textContent =
+                metadata.last_updated || "unknown";
+
+            document.getElementById("updated-count").textContent =
+                metadata.packages.filter(
+                    container => container.latest_updated
+                ).length;
+
+            containers.innerHTML = "";
+
+            for (const container of metadata.packages) {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>
+                        <div class="container-name">
+                            ${escapeHtml(container.image)}
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="version">
+                            ${escapeHtml(
+                    container.latest || "unknown"
+                )}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="updated">
+                            ${escapeHtml(
+                    container.latest_updated || "—"
+                )}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${container.latest_digest
+                        ? `<code>${escapeHtml(
+                            container.latest_digest
+                        )}</code>`
+                        : `<span class="unknown">—</span>`
+                    }
+                    </td>
+
+                    <td class="actions">
+                        <a
+                            href="${escapeAttribute(
+                        container.url
+                    )}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open on GitHub"
+                        >
+                            ↗
+                        </a>
+                    </td>
+                `;
+
+                containers.appendChild(row);
+            }
+
+            updateSearch();
+            updateRefreshTime();
+        }
+
+        function updateSearch() {
+            const query = search.value
+                .trim()
+                .toLowerCase();
+
+            const rows = containers.querySelectorAll("tr");
+
+            let visible = 0;
+
+            for (const row of rows) {
+                const name = row
+                    .querySelector(".container-name")
+                    .textContent
+                    .toLowerCase();
+
+                const matches = name.includes(query);
+
+                row.hidden = !matches;
+
+                if (matches) {
+                    visible++;
+                }
+            }
+
+            empty.hidden = visible !== 0;
+        }
+
+        function updateRefreshTime() {
+            refreshTime.textContent =
+                "Dashboard checked " +
+                new Date().toLocaleTimeString();
+        }
+
+        async function refresh() {
+            refreshButton.disabled = true;
+            refreshButton.textContent = "↻ Refreshing...";
+
+            try {
+                const response = await fetch(
+                    "/api/metadata",
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(
+                        `HTTP ${response.status}`
+                    );
+                }
+
+                const responseData = await response.json();
+
+                render(responseData.metadata);
+            } catch (error) {
+                console.error(
+                    "Failed to refresh metadata:",
+                    error
+                );
+            } finally {
+                refreshButton.disabled = false;
+                refreshButton.textContent = "↻ Refresh";
+            }
+        }
+
+        function escapeHtml(value) {
+            const div = document.createElement("div");
+
+            div.textContent = String(value ?? "");
+
+            return div.innerHTML;
+        }
+
+        function escapeAttribute(value) {
+            return escapeHtml(value)
+                .replace(/"/g, "&quot;");
+        }
+
+        search.addEventListener(
+            "input",
+            updateSearch
+        );
+
+        refreshButton.addEventListener(
+            "click",
+            refresh
+        );
+
+        setInterval(
+            refresh,
+            60 * 1000
+        );
+
+        updateSearch();
+        updateRefreshTime();
+    </script>
+</body>
+
+</html>
