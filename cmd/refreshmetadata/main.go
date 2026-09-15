@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"local/dockerfiles/internal/config"
 	"local/dockerfiles/internal/github"
@@ -15,49 +19,61 @@ import (
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Fprintln(
+			os.Stderr,
+			"error:",
+			err,
+		)
+
 		os.Exit(1)
 	}
 
-	level, err := logging.ParseLevel(cfg.LogLevel)
+	level, err := logging.ParseLevel(
+		cfg.LogLevel,
+	)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+		fmt.Fprintln(
+			os.Stderr,
+			"error:",
+			err,
+		)
+
 		os.Exit(1)
 	}
 
-	logger, closeLogger, err := logging.Setup(logging.Config{
-		File:       cfg.LogFile,
-		Level:      level,
-		MaxSize:    10,
-		MaxBackups: 5,
-		MaxAge:     30,
-	})
+	logger, closeLogger, err := logging.Setup(
+		logging.Config{
+			File:       cfg.LogFile,
+			Level:      level,
+			MaxSize:    10,
+			MaxBackups: 5,
+			MaxAge:     30,
+		},
+	)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error setting up logging:", err)
+		fmt.Fprintln(
+			os.Stderr,
+			"error setting up logging:",
+			err,
+		)
+
 		os.Exit(1)
 	}
+
 	defer closeLogger()
 
-	slog.SetDefault(logger)
-
-	slog.Info(
-		"Checking packages",
-		"user", cfg.GithubUsername,
-		"repo", cfg.Repository,
+	slog.SetDefault(
+		logger,
 	)
+
+	ctx, stop := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stop()
 
 	fsSvc := fsService.New()
-
-	oldMetadata, err := fsSvc.LoadJsonMetadata(
-		cfg.DataFile,
-	)
-	if err != nil {
-		slog.Error(
-			"error loading metadata",
-			"error", err,
-		)
-		os.Exit(1)
-	}
 
 	client := github.NewClient(
 		cfg.GithubToken,
@@ -71,21 +87,94 @@ func main() {
 		cfg.Workers,
 	)
 
-	packages, err := githubSvc.GetContainers()
-	if err != nil {
-		slog.Error(
-			"error getting packages",
-			"error", err,
-		)
-		os.Exit(1)
+	run := func() {
+		if err := refresh(
+			cfg,
+			fsSvc,
+			githubSvc,
+		); err != nil {
+			slog.Error(
+				"metadata refresh failed",
+				"error",
+				err,
+			)
+		}
+	}
+
+	run()
+
+	if cfg.RefreshInterval == 0 {
+		return
 	}
 
 	slog.Info(
-		"Found container packages",
-		"count", len(packages),
+		"scheduled metadata refresh enabled",
+		"interval",
+		cfg.RefreshInterval.String(),
 	)
 
-	slog.Info("Comparing package metadata")
+	ticker := time.NewTicker(
+		cfg.RefreshInterval,
+	)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			slog.Info(
+				"metadata refresher stopping",
+				"reason",
+				ctx.Err(),
+			)
+
+			return
+
+		case <-ticker.C:
+			run()
+		}
+	}
+}
+
+func refresh(
+	cfg config.Config,
+	fsSvc *fsService.Service,
+	githubSvc *githubService.Service,
+) error {
+	slog.Info(
+		"checking packages",
+		"user",
+		cfg.GithubUsername,
+		"repo",
+		cfg.Repository,
+	)
+
+	oldMetadata, err := fsSvc.LoadJsonMetadata(
+		cfg.DataFile,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"loading metadata: %w",
+			err,
+		)
+	}
+
+	packages, err := githubSvc.GetContainers()
+	if err != nil {
+		return fmt.Errorf(
+			"getting packages: %w",
+			err,
+		)
+	}
+
+	slog.Info(
+		"found container packages",
+		"count",
+		len(packages),
+	)
+
+	slog.Info(
+		"comparing package metadata",
+	)
 
 	githubService.Compare(
 		oldMetadata.Packages,
@@ -110,16 +199,19 @@ func main() {
 		repositoryURL,
 		packages,
 	); err != nil {
-		slog.Error(
-			"error saving metadata",
-			"error", err,
+		return fmt.Errorf(
+			"saving metadata: %w",
+			err,
 		)
-		os.Exit(1)
 	}
 
 	slog.Info(
-		"Wrote packages",
-		"count", len(packages),
-		"file", cfg.DataFile,
+		"wrote packages",
+		"count",
+		len(packages),
+		"file",
+		cfg.DataFile,
 	)
+
+	return nil
 }

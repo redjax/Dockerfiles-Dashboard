@@ -8,24 +8,27 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
-	defaultDataFile = "dockerfiles.metadata.json"
-	defaultWorkers  = 4
-	defaultUsername = "redjax"
-	defaultRepo     = "Dockerfiles"
+	defaultDataFile        = "dockerfiles.metadata.json"
+	defaultWorkers         = 4
+	defaultUsername        = "redjax"
+	defaultRepo            = "Dockerfiles"
+	defaultRefreshInterval = time.Hour
 )
 
 type Config struct {
-	GithubUsername string
-	Repository     string
-	GithubToken    string
-	TokenFile      string
-	DataFile       string
-	LogFile        string
-	LogLevel       string
-	Workers        int
+	GithubUsername  string
+	Repository      string
+	GithubToken     string
+	TokenFile       string
+	DataFile        string
+	LogFile         string
+	LogLevel        string
+	Workers         int
+	RefreshInterval time.Duration
 }
 
 func LoadConfig() (Config, error) {
@@ -87,11 +90,24 @@ func LoadConfig() (Config, error) {
 		"Number of concurrent Github requests",
 	)
 
+	flag.DurationVar(
+		&cfg.RefreshInterval,
+		"interval",
+		defaultRefreshInterval,
+		"How often to refresh GitHub metadata; use 0 to run once and exit",
+	)
+
 	flag.Parse()
 
 	if cfg.Workers < 1 {
 		return Config{}, fmt.Errorf(
 			"--workers must be at least 1",
+		)
+	}
+
+	if cfg.RefreshInterval < 0 {
+		return Config{}, fmt.Errorf(
+			"--interval cannot be negative",
 		)
 	}
 

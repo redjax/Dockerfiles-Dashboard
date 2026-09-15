@@ -11,12 +11,14 @@ services:
       target: refreshmetadata
     image: dockerfiles-refresh:local
     pull_policy: build
-    restart: "no"
+    restart: unless-stopped
     env_file:
       - .env
     command:
       - --data-file
       - /data/dockerfiles.metadata.json
+      - --interval
+      - ${REFRESH_INTERVAL:-1h}
       - --log-level
       - info
     volumes:
@@ -29,9 +31,6 @@ services:
     image: dockerfiles-dashboard:local
     pull_policy: build
     restart: unless-stopped
-    depends_on:
-      refreshmetadata:
-        condition: service_completed_successfully
     ports:
       - "${DASHBOARD_PORT:-127.0.0.1:8080}:8080"
     environment:
