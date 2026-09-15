@@ -37,3 +37,18 @@ tasks:
     desc: "Run container dashboard"
     cmds:
       - go run cmd/dashboard/main.go
+
+  release:check:
+    desc: Validate the GoReleaser configuration
+    cmds:
+      - goreleaser check
+
+  release:snapshot:
+    desc: Cross-compile both applications locally
+    cmds:
+      - goreleaser release --snapshot --clean
+
+  release:build:
+    desc: Produce local archives and checksums
+    cmds:
+      - goreleaser build --snapshot --clean
