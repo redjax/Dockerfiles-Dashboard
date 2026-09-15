@@ -1,0 +1,26 @@
+## Secrets
+.env
+*.env
+.env/*
+env/*
+*.local
+*.local.*
+secret[s].*
+.secret[s].*
+*.secret[s].*
+
+
+## Data
+*.json
+
+## Taskfile
+.task/*
+
+## Build outputs
+dist/*
+build/*
+
+
+## Allow rules
+!*example*.*
+!*.*example*
