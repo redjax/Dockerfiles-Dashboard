@@ -12,6 +12,7 @@ secret[s].*
 
 ## Data
 *.json
+data/*
 
 ## Taskfile
 .task/*

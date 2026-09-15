@@ -1,0 +1,41 @@
+---
+name: dockerfiles
+
+volumes:
+  metadata: {}
+
+services:
+  refreshmetadata:
+    build:
+      context: .
+      target: refreshmetadata
+    image: dockerfiles-refresh:local
+    pull_policy: build
+    restart: "no"
+    env_file:
+      - .env
+    command:
+      - --data-file
+      - /data/dockerfiles.metadata.json
+      - --log-level
+      - info
+    volumes:
+      - metadata:/data
+
+  dashboard:
+    build:
+      context: .
+      target: dashboard
+    image: dockerfiles-dashboard:local
+    pull_policy: build
+    restart: unless-stopped
+    depends_on:
+      refreshmetadata:
+        condition: service_completed_successfully
+    ports:
+      - "${DASHBOARD_PORT:-127.0.0.1:8080}:8080"
+    environment:
+      DATA_FILE: /data/dockerfiles.metadata.json
+      DASHBOARD_ADDR: ":8080"
+    volumes:
+      - metadata:/data:ro
