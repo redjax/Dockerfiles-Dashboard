@@ -29,6 +29,7 @@ type PastVersion struct {
 type Container struct {
 	Image         string        `json:"image"`
 	Latest        string        `json:"latest"`
+	Tags          []string      `json:"tags"`
 	URL           string        `json:"url"`
 	LatestDigest  string        `json:"latest_digest,omitempty"`
 	LatestUpdated string        `json:"latest_updated,omitempty"`

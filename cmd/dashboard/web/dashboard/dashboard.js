@@ -52,50 +52,86 @@ function renderContainers() {
         const row = document.createElement("tr");
 
         row.innerHTML = `
-            <td>
-                <div class="container-name">
-                    ${escapeHtml(container.image)}
-                </div>
-            </td>
+    <td>
+        <div class="container-name">
+            ${escapeHtml(container.image)}
+        </div>
+    </td>
 
-            <td>
-                <span class="version">
-                    ${escapeHtml(
+    <td>
+        <span class="version">
+            ${escapeHtml(
             container.latest || "unknown"
         )}
-                </span>
-            </td>
+        </span>
+    </td>
 
-            <td>
-                <span class="updated">
-                    ${escapeHtml(
+    <td>
+        <span class="updated">
+            ${escapeHtml(
             container.latest_updated || "—"
         )}
-                </span>
-            </td>
+        </span>
+    </td>
 
-            <td>
-                ${container.latest_digest
+    <td>
+        ${container.latest_digest
                 ? `<code>${escapeHtml(
                     container.latest_digest
                 )}</code>`
                 : `<span class="unknown">—</span>`
             }
-            </td>
+    </td>
 
-            <td class="actions">
-                <a
-                    href="${escapeAttribute(
+    <td>
+        <div class="tag-list">
+            ${renderTags(container.tags)}
+        </div>
+    </td>
+
+    <td class="actions">
+        <details class="tag-explorer">
+            <summary
+                title="Explore tags"
+                aria-label="Explore tags for ${escapeAttribute(
+                container.image
+            )}"
+            >
+                ☰
+            </summary>
+
+            <div class="tag-explorer-panel">
+                <div class="tag-explorer-header">
+                    <strong>
+                        ${escapeHtml(container.image)}
+                    </strong>
+
+                    <a
+                        href="${escapeAttribute(
                 container.url
             )}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Open on GitHub"
-                >
-                    ↗
-                </a>
-            </td>
-        `;
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Open on GitHub ↗
+                    </a>
+                </div>
+
+                <h3>Current tags</h3>
+
+                <div class="tag-list">
+                    ${renderTags(container.tags)}
+                </div>
+
+                <h3>Tag history</h3>
+
+                ${renderPastVersions(
+                container.past_versions
+            )}
+            </div>
+        </details>
+    </td>
+`;
 
         containers.appendChild(row);
     }
@@ -281,38 +317,84 @@ function escapeAttribute(value) {
         .replace(/"/g, "&quot;");
 }
 
-function loadInitialMetadata() {
-    const rows = Array.from(
-        document.querySelectorAll("#containers tr")
+function closeTagExplorers(except = null) {
+    const explorers = document.querySelectorAll(
+        ".tag-explorer[open]"
     );
 
-    return {
-        packages: rows.map(row => ({
-            image: row
-                .querySelector(".container-name")
-                .textContent
-                .trim(),
+    for (const explorer of explorers) {
+        if (explorer === except) {
+            continue;
+        }
 
-            latest: row
-                .querySelector(".version")
-                .textContent
-                .trim(),
+        explorer.open = false;
+    }
+}
 
-            latest_updated: row
-                .querySelector(".updated")
-                .textContent
-                .trim(),
+function handleDocumentClick(event) {
+    const explorer = event.target.closest(
+        ".tag-explorer"
+    );
 
-            latest_digest: row
-                .querySelector("code")
-                ?.textContent
-                .trim() || "",
+    if (explorer) {
+        return;
+    }
 
-            url: row
-                .querySelector(".actions a")
-                ?.href || ""
-        }))
-    };
+    closeTagExplorers();
+}
+
+function renderTags(tags) {
+    if (!tags || tags.length === 0) {
+        return `<span class="unknown">—</span>`;
+    }
+
+    return tags.map(tag => `
+        <span class="tag ${tag === "latest" ? "tag-latest" : ""}">
+            ${escapeHtml(tag)}
+        </span>
+    `).join("");
+}
+
+function renderPastVersions(pastVersions) {
+    if (!pastVersions || pastVersions.length === 0) {
+        return `
+            <p class="unknown">
+                No historic tags found.
+            </p>
+        `;
+    }
+
+    return `
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Tag</th>
+                    <th>Published</th>
+                    <th>Digest</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                ${pastVersions.map(version => `
+                    <tr>
+                        <td>
+                            <code>${escapeHtml(version.tag)}</code>
+                        </td>
+
+                        <td>
+                            ${escapeHtml(version.release_date)}
+                        </td>
+
+                        <td>
+                            <code>
+                                ${escapeHtml(version.digest || "—")}
+                            </code>
+                        </td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>
+    `;
 }
 
 for (const button of sortButtons) {
@@ -332,12 +414,42 @@ refreshButton.addEventListener(
     refresh
 );
 
+document.addEventListener(
+    "click",
+    handleDocumentClick
+);
+
+document.addEventListener(
+    "toggle",
+    event => {
+        const explorer = event.target;
+
+        if (
+            !explorer.matches(".tag-explorer") ||
+            !explorer.open
+        ) {
+            return;
+        }
+
+        closeTagExplorers(explorer);
+    },
+    true
+);
+
+document.addEventListener(
+    "keydown",
+    event => {
+        if (event.key !== "Escape") {
+            return;
+        }
+
+        closeTagExplorers();
+    }
+);
+
 setInterval(
     refresh,
     60 * 1000
 );
 
-currentMetadata = loadInitialMetadata();
-
-renderContainers();
-updateRefreshTime();
+refresh();

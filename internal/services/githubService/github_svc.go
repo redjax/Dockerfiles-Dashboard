@@ -288,6 +288,7 @@ func buildContainer(
 			repository,
 			url.PathEscape(pkg.Name),
 		),
+		Tags:         []string{},
 		PastVersions: []github.PastVersion{},
 	}
 
@@ -296,6 +297,29 @@ func buildContainer(
 	)
 
 	if latestVersion != nil {
+		tags := append(
+			[]string{},
+			latestVersion.Metadata.Container.Tags...,
+		)
+
+		sort.Slice(
+			tags,
+			func(i, j int) bool {
+				if tags[i] == "latest" {
+					return true
+				}
+
+				if tags[j] == "latest" {
+					return false
+				}
+
+				return strings.ToLower(tags[i]) <
+					strings.ToLower(tags[j])
+			},
+		)
+
+		container.Tags = tags
+
 		container.Latest = selectReleaseTag(
 			latestVersion.Metadata.Container.Tags,
 		)

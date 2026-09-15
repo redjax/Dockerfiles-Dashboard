@@ -104,6 +104,7 @@
                         </th>
 
                         <th scope="col">Digest</th>
+                        <th scope="col">Tags</th>
 
                         <th scope="col">
                             <span class="sr-only">
@@ -152,10 +153,84 @@
                             {{end}}
                         </td>
 
+                        <td>
+                            <div class="tag-list">
+                                {{range .Tags}}
+                                <span class="tag {{if eq . " latest"}}tag-latest{{end}}">
+                                    {{.}}
+                                </span>
+                                {{else}}
+                                <span class="unknown">—</span>
+                                {{end}}
+                            </div>
+                        </td>
+
                         <td class="actions">
-                            <a href="{{.URL}}" target="_blank" rel="noopener noreferrer" title="Open on GitHub">
-                                ↗
-                            </a>
+                            <details class="tag-explorer">
+                                <summary title="Explore tags" aria-label="Explore tags for {{.Image}}">
+                                    ☰
+                                </summary>
+
+                                <div class="tag-explorer-panel">
+                                    <div class="tag-explorer-header">
+                                        <strong>{{.Image}}</strong>
+
+                                        <a href="{{.URL}}" target="_blank" rel="noopener noreferrer">
+                                            Open on GitHub ↗
+                                        </a>
+                                    </div>
+
+                                    <h3>Current tags</h3>
+
+                                    <div class="tag-list">
+                                        {{range .Tags}}
+                                        <span class="tag {{if eq . " latest"}}tag-latest{{end}}">
+                                            {{.}}
+                                        </span>
+                                        {{else}}
+                                        <span class="unknown">
+                                            No current tags found.
+                                        </span>
+                                        {{end}}
+                                    </div>
+
+                                    <h3>Tag history</h3>
+
+                                    {{if .PastVersions}}
+                                    <table class="history-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Tag</th>
+                                                <th>Published</th>
+                                                <th>Digest</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            {{range .PastVersions}}
+                                            <tr>
+                                                <td>
+                                                    <code>{{.Tag}}</code>
+                                                </td>
+
+                                                <td>
+                                                    {{.ReleaseDate}}
+                                                </td>
+
+                                                <td>
+                                                    <code>{{.Digest}}</code>
+                                                </td>
+                                            </tr>
+                                            {{end}}
+                                        </tbody>
+                                    </table>
+                                    {{else}}
+                                    <p class="unknown">
+                                        No historic tags found.
+                                    </p>
+                                    {{end}}
+                                </div>
+                            </details>
                         </td>
                     </tr>
                     {{end}}

@@ -478,3 +478,160 @@ th[aria-sort] .sort-indicator {
 
     border: 0;
 }
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag {
+    display: inline-block;
+
+    padding: 3px 7px;
+
+    background: rgba(139, 148, 158, 0.12);
+
+    border: 1px solid rgba(139, 148, 158, 0.25);
+    border-radius: 999px;
+
+    color: var(--muted);
+
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        monospace;
+
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+.tag-latest {
+    background: rgba(63, 185, 80, 0.12);
+
+    border-color: rgba(63, 185, 80, 0.3);
+
+    color: var(--green);
+}
+
+.tag-explorer {
+    position: relative;
+}
+
+.tag-explorer summary {
+    list-style: none;
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    font-size: 18px;
+}
+
+.tag-explorer summary::-webkit-details-marker {
+    display: none;
+}
+
+.tag-explorer summary:hover {
+    color: var(--blue);
+}
+
+.tag-explorer summary:focus-visible {
+    border-radius: 4px;
+
+    outline: 2px solid var(--blue);
+    outline-offset: 4px;
+}
+
+.tag-explorer-panel {
+    position: absolute;
+    z-index: 10;
+    right: 0;
+
+    width: min(700px, 80vw);
+    max-height: 500px;
+    overflow: auto;
+
+    padding: 18px;
+    margin-top: 10px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.45);
+
+    text-align: left;
+}
+
+.tag-explorer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    margin-bottom: 16px;
+}
+
+.tag-explorer-header strong {
+    overflow: hidden;
+
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        monospace;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tag-explorer-header a {
+    color: var(--blue);
+
+    font-size: 12px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.tag-explorer-header a:hover {
+    text-decoration: underline;
+}
+
+.tag-explorer-panel h3 {
+    margin: 18px 0 10px;
+
+    color: var(--muted);
+
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.history-table {
+    min-width: 580px;
+
+    font-size: 12px;
+}
+
+.history-table th,
+.history-table td {
+    padding: 10px;
+}
+
+.history-table code {
+    max-width: 280px;
+}
+
+@media (max-width: 800px) {
+    .tag-explorer-panel {
+        position: fixed;
+        top: 10vh;
+        right: 10px;
+        left: 10px;
+
+        width: auto;
+        max-height: 80vh;
+    }
+}
