@@ -1,0 +1,39 @@
+---
+version: "3"
+
+vars:
+  OUTPUT_DIR: "dist"
+
+tasks:
+  build:refreshmetadata:
+    desc: "Build metadata refresher app to dist/ dir"
+    aliases: [build-refreshmetadata]
+    sources:
+      - go.mod
+      - "**/*.go"
+    generates:
+      - "{{.OUTPUT_DIR}}/dockerfiles-refresh"
+    cmds:
+      - go build -o "{{.OUTPUT_DIR}}/dockerfiles-refresh" cmd/refreshmetadata/main.go
+
+  run:refreshmetadata:
+    desc: "Run cmd/refreshmetadata/main.go. Prepend with GH_TOKEN_FILE='/path/to/gh-token' to load Github token from a file."
+    aliases: [refresh-metadata]
+    requires:
+      vars:
+        - GITHUB_TOKEN
+    cmds:
+      - >
+        GITHUB_TOKEN="{{.GITHUB_TOKEN}}"
+        go run cmd/refreshmetadata/main.go
+        {{if .GH_TOKEN_FILE}}-token-file "{{.GH_TOKEN_FILE}}"{{end}}
+
+  build:dashboard:
+    desc: "Build container dashboard"
+    cmds:
+      - go build -o "{{.OUTPUT_DIR}}/dockerfiles-dashboard" cmd/dashboard/main.go
+
+  run:dashboard:
+    desc: "Run container dashboard"
+    cmds:
+      - go run cmd/dashboard/main.go
