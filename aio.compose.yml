@@ -1,0 +1,18 @@
+---
+name: dockerfiles
+
+volumes:
+  metadata: {}
+
+services:
+  allinone:
+    build:
+      context: .
+      target: allinone
+    ports:
+      - "${DASHBOARD_PORT:-127.0.0.1:8080}:8080"
+    environment:
+      DATA_FILE: /data/dockerfiles.metadata.json
+      DASHBOARD_ADDR: ":8080"
+    volumes:
+      - metadata:/data
