@@ -3,6 +3,9 @@ version: "3"
 
 vars:
   OUTPUT_DIR: "dist"
+  KEEPALIVE_URL: "https://dockerfiles-dashboard.onrender.com"
+  KEEPALIVE_INTERVAL: "15m"
+  KEEPALIVE_QUIET_HOURS: "02:00-07:00"
 
 tasks:
   build:refreshmetadata:
@@ -52,3 +55,12 @@ tasks:
     desc: Produce local archives and checksums
     cmds:
       - goreleaser build --snapshot --clean
+
+  keepalive:
+    desc: Run keepalive script to keep a free-tier container running (i.e. on render.com).
+    cmds:
+      - >
+        ./scripts/keepalive-request.sh \
+          -u "{{.KEEPALIVE_URL}}" \
+          --interval "{{.KEEPALIVE_INTERVAL}}" \
+          --quiet-hours "{{.KEEPALIVE_QUIET_HOURS}}"
