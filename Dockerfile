@@ -74,6 +74,9 @@ COPY scripts/start_all-in-one.sh /start_all-in-one.sh
 
 RUN chmod +x /start_all-in-one.sh
 
+ENV DATA_FILE=/data/dockerfiles.metadata.json
+ENV DASHBOARD_ADDR=:8080
+
 EXPOSE 8080
 
 ENTRYPOINT ["/start_all-in-one.sh"]
