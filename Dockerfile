@@ -63,3 +63,17 @@ COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-ce
 COPY --from=build /out/dockerfiles-refresh /dockerfiles-refresh
 
 ENTRYPOINT ["/dockerfiles-refresh"]
+
+FROM alpine:${ALPINE_VERSION} AS allinone
+
+RUN apk --no-cache add ca-certificates
+
+COPY --from=build /out/dockerfiles-refresh /dockerfiles-refresh
+COPY --from=build /out/dockerfiles-dashboard /dockerfiles-dashboard
+COPY scripts/start_all-in-one.sh /start_all-in-one.sh
+
+RUN chmod +x /start_all-in-one.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["/start_all-in-one.sh"]
