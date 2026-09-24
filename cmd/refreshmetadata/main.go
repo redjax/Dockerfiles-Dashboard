@@ -148,14 +148,23 @@ func refresh(
 		cfg.Repository,
 	)
 
+	// Attempt to load existing metadata, or create initial metadata file on first run.
 	oldMetadata, err := fsSvc.LoadJsonMetadata(
 		cfg.DataFile,
 	)
 	if err != nil {
-		return fmt.Errorf(
-			"loading metadata: %w",
-			err,
-		)
+		if os.IsNotExist(err) {
+			slog.Info(
+				"metadata file does not exist; performing initial refresh",
+			)
+
+			oldMetadata = fsService.Metadata{}
+		} else {
+			return fmt.Errorf(
+				"loading metadata: %w",
+				err,
+			)
+		}
 	}
 
 	packages, err := githubSvc.GetContainers()

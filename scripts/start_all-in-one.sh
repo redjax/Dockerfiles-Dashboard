@@ -7,9 +7,13 @@ set -e
 # This script is used by the all-in-one layer.      #
 #####################################################
 
+mkdir -p /data
+
 /dockerfiles-refresh \
     --data-file /data/dockerfiles.metadata.json \
     --interval "${REFRESH_INTERVAL:-1h}" \
     --log-level info &
+
+refresh_pid=$!
 
 exec /dockerfiles-dashboard
