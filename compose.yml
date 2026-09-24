@@ -13,7 +13,7 @@ services:
     pull_policy: build
     restart: unless-stopped
     env_file:
-      - .env
+      - app.env
     command:
       - --data-file
       - /data/dockerfiles.metadata.json
