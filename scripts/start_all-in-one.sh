@@ -10,10 +10,8 @@ set -e
 mkdir -p /data
 
 /dockerfiles-refresh \
-    --data-file /data/dockerfiles.metadata.json \
+    --data-file "${DATA_FILE}" \
     --interval "${REFRESH_INTERVAL:-1h}" \
     --log-level info &
-
-refresh_pid=$!
 
 exec /dockerfiles-dashboard
