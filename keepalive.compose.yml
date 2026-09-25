@@ -1,0 +1,13 @@
+---
+name: dockerfiles
+
+services:
+  keepalive:
+    build:
+      context: .
+      dockerfile: keepalive.Dockerfile
+    image: dockerfiles-keepalive:local
+    pull_policy: build
+    restart: unless-stopped
+    env_file:
+      - keepalive.env

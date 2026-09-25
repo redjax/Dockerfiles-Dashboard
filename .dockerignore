@@ -5,7 +5,6 @@ dist
 dockerfiles.metadata.json
 
 README.md
-scripts/*
 
 .goreleaser.yaml
 .mise.toml
@@ -16,5 +15,3 @@ compose*.yml
 
 *.log
 *.tmp
-
-!scripts/start_all-in-one.sh
