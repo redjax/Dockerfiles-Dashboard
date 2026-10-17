@@ -13,8 +13,8 @@ let currentMetadata = {
 };
 
 let sortState = {
-    column: "image",
-    direction: "ascending"
+    column: "latest_updated",
+    direction: "descending"
 };
 
 function render(metadata) {
@@ -244,7 +244,7 @@ function updateSearch() {
         .trim()
         .toLowerCase();
 
-    const rows = containers.querySelectorAll("tr");
+    const rows = containers.querySelectorAll(":scope > tr");
 
     let visible = 0;
 
